@@ -15,7 +15,7 @@
   <nav>
     <a href="index.html">home</a>
     <a class="cur" href="projects.html">projects</a>
-    <a href="notes.html">notes</a>
+    <a href="resume.html">resume</a>
     <button id="theme" type="button">dark</button>
   </nav>
 </header>
@@ -25,6 +25,7 @@
 </div>
 <script src="assets/marked.js"></script>
 <script src="assets/purify.js"></script>
+<script src="assets/highlight.js"></script>
 <script src="assets/site.js"></script>
 <script>
 (function () {
@@ -48,7 +49,7 @@
         var frag = document.createDocumentFragment();
         frag.appendChild(el('h2', { class: 'label' }, 'Projects'));
         if (!data.repos.length) { frag.appendChild(el('p', { class: 'msg' }, 'Nothing here yet.')); }
-        var ul = el('ul', { class: 'list' });
+        var ul = el('ul', { class: 'list repos' });
         data.repos.forEach(function (r) {
           var li = el('li');
           li.appendChild(el('a', { href: 'projects.html?r=' + encodeURIComponent(r.name) }, r.name));
@@ -65,6 +66,24 @@
       .catch(function () { fail('Could not load projects.'); });
   }
 
+  // GitHub-style bordered box with a header row
+  function box(head, body) {
+    var h = el('div', { class: 'box-head' });
+    h.append.apply(h, head);
+    var b = el('div', { class: 'box' });
+    b.append(h, body);
+    return b;
+  }
+
+  // syntax highlight a <code>: by language name if highlight.js knows it, else let it guess
+  function hl(code, lang) {
+    var t = code.textContent;
+    code.innerHTML = (hljs.getLanguage(lang) ? hljs.highlight(t, { language: lang }) : hljs.highlightAuto(t)).value;
+  }
+  function hlBlocks(root) {
+    root.querySelectorAll('pre code').forEach(function (c) { hl(c, (c.className.match(/language-(\S+)/) || [])[1]); });
+  }
+
   function showRepo(name) {
     fetch('/api/readme/' + encodeURIComponent(name))
       .then(function (res) {
@@ -74,31 +93,56 @@
       })
       .then(function (data) {
         var r = data.repo;
+        var path = new URLSearchParams(location.search).get('p') || '';
+        var base = 'projects.html?r=' + encodeURIComponent(r.name);
+        var raw = 'https://raw.githubusercontent.com/' + data.user + '/' + r.name + '/HEAD/';
+        var blob = 'https://github.com/' + data.user + '/' + r.name + '/blob/HEAD/';
+        var resolve = function (u, kind) { return (kind === 'img' ? raw : blob) + u.replace(/^\.?\//, ''); };
         document.title = r.name + ' - centresystems.info';
         var frag = document.createDocumentFragment();
         frag.appendChild(el('a', { class: 'back', href: 'projects.html' }, '← projects'));
+        frag.appendChild(el('h1', { class: 'title' }, r.name));
         var pm = el('p', { class: 'pagemeta' });
         pm.appendChild(el('a', { href: r.url }, 'view on github'));
         pm.appendChild(document.createTextNode(' · ' + meta(r)));
+        frag.appendChild(pm);
 
-        var article = el('article', { class: 'md' });
-        if (data.markdown) {
-          var raw = 'https://raw.githubusercontent.com/' + data.user + '/' + r.name + '/HEAD/';
-          var blob = 'https://github.com/' + data.user + '/' + r.name + '/blob/HEAD/';
-          renderMarkdown(article, data.markdown, function (u, kind) {
-            u = u.replace(/^\.?\//, '');
-            return (kind === 'img' ? raw : blob) + u;
-          });
-          // READMEs usually start with their own title; show meta under it
-          var h1 = article.querySelector('h1');
-          if (h1 && h1 === article.firstElementChild) h1.after(pm); else article.prepend(pm);
-          if (!h1 || h1 !== article.firstElementChild) article.prepend(el('h1', {}, r.name));
+        // breadcrumb header: repo / dir / file
+        var crumbs = [el('a', { href: base }, r.name)], acc = '';
+        path.split('/').filter(Boolean).forEach(function (part) {
+          acc += (acc ? '/' : '') + part;
+          crumbs.push(' / ', el('a', { href: base + '&p=' + encodeURIComponent(acc) }, part));
+        });
+
+        var isDir = !path || data.files.some(function (f) { return f.dir && f.path === path; });
+        if (isDir) {
+          var prefix = path ? path + '/' : '';
+          var ul = el('ul', { class: 'tree' });
+          data.files
+            .filter(function (f) { return f.path.startsWith(prefix) && f.path.indexOf('/', prefix.length) < 0; })
+            .sort(function (a, b) { return b.dir - a.dir || a.path.localeCompare(b.path); })
+            .forEach(function (f) {
+              var li = el('li', { class: f.dir ? 'dir' : 'file' });
+              li.appendChild(el('a', { href: base + '&p=' + encodeURIComponent(f.path) }, f.path.slice(prefix.length)));
+              ul.appendChild(li);
+            });
+          frag.appendChild(box(crumbs, ul));
+          if (!path) {
+            var article = el('article', { class: 'md' });
+            if (data.markdown) { renderMarkdown(article, data.markdown, resolve); hlBlocks(article); }
+            else article.appendChild(el('p', {}, r.description || 'No README yet.'));
+            frag.appendChild(box(['README'], article));
+          }
         } else {
-          article.appendChild(el('h1', {}, r.name));
-          article.appendChild(pm);
-          article.appendChild(el('p', {}, r.description || 'No README yet.'));
+          var view = el('div');
+          frag.appendChild(box(crumbs, view));
+          if (/\.(png|jpe?g|gif|svg|webp|ico)$/i.test(path)) view.appendChild(el('img', { src: raw + encodeURI(path) }));
+          else fetch(raw + encodeURI(path)).then(function (res) { return res.text(); }).then(function (t) {
+            if (/\.md$/i.test(path)) { view.className = 'md'; renderMarkdown(view, t, resolve); hlBlocks(view); }
+            else if (t.indexOf('\0') >= 0) view.textContent = 'Binary file.';
+            else hl(view.appendChild(el('pre', { class: 'src' })).appendChild(el('code', null, t)), path.split('.').pop());
+          });
         }
-        frag.appendChild(article);
         main.replaceChildren(frag);
       })
       .catch(function (e) {

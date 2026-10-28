@@ -15,47 +15,73 @@
   <nav>
     <a class="cur" href="index.html">home</a>
     <a href="projects.html">projects</a>
-    <a href="notes.html">notes</a>
+    <a href="resume.html">resume</a>
     <button id="theme" type="button">dark</button>
   </nav>
 </header>
 
 <p>Hi I'm Andrew. I work on networks, embedded firmware, and Linux systems.</p>
-<p>This site runs on a small Proxmox cluster at home, along with the game servers below.</p>
+<p>This site runs on a Proxmox cluster in my apartment, along with other servers below.</p>
 
 <h2 class="label">Projects</h2>
-<!-- hrefs use your GitHub repo names: projects.html?r=<repo> -->
 <ul class="list">
-  <li><a href="projects.html?r=encvr">encvr</a><span class="d">Encrypted peer-to-peer LoRa transceiver on ESP32 and FreeRTOS.</span></li>
-  <li><a href="projects.html?r=centre-sdn">centre-sdn</a><span class="d">SDN control plane in Go with an XDP/eBPF intrusion detection system.</span></li>
-  <li><a href="projects.html?r=statbar">statbar</a><span class="d">ESP32 and a long, narrow TFT showing live PC metrics over USB.</span></li>
-  <li><a href="projects.html?r=centre-lab">centre-lab</a><span class="d">My homelab running a PVE cluster, SDN environment for my LXCs, and NIDS on the openWRT router.</span></li>
+  <li class="wip"><a href="projects.html?r=encvr">encvr</a><span class="d">Encrypted peer-to-peer LoRa transceiver on ESP32 and FreeRTOS.</span></li>
+  <li><a href="projects.html?r=flowView">flowView</a><span class="d">Really fast XDP/eBPF flow classifier and packet inspection in Go.</span></li>
+  <li><a href="projects.html?r=myFridge">myFridge</a><span class="d">iOS app for tracking what's in your fridge, pantry, and freezer by expiration date.</span></li>
+  <li><a href="projects.html?r=centresystems">centreSystems</a><span class="d">My homelab running a PVE cluster, Zabbix, and game servers all managed by Ansible.</span></li>
+  <li class="wip"><a href="projects.html?r=fieldNotes">fieldNotes</a><span class="d">Early stage note taking device powered by ESP32 and <a href="https://github.com/lokutor-ai/oido">Oído</a></span></li>
+
 </ul>
 <a class="more" href="projects.html">all projects</a>
 
+<h2 class="label">live packet view</h2>
+<span class="st" id="flowstate">checking</span>
+<canvas id="flowgraph"></canvas>
+<ul class="list flows" id="flows"></ul>
+<h3 class="label">Powered by XDP</h3>
+
+<h2 class="label">Proxmox nodes</h2>
+<ul class="tiles">
+  <li data-srv="centresrv-pve"><div class="top"><span class="n">centresrv-pve</span><span class="st">checking</span></div><span class="d">Proxmox node</span><div class="metric" data-m="cpu"><span class="k">cpu</span><span class="bar"><i></i></span><span class="v"></span></div><div class="metric" data-m="mem"><span class="k">ram</span><span class="bar"><i></i></span><span class="v"></span></div><span class="meta"></span></li>
+  <li data-srv="thinkpad-pve"><div class="top"><span class="n">thinkpad-pve</span><span class="st">checking</span></div><span class="d">Proxmox node</span><div class="metric" data-m="cpu"><span class="k">cpu</span><span class="bar"><i></i></span><span class="v"></span></div><div class="metric" data-m="mem"><span class="k">ram</span><span class="bar"><i></i></span><span class="v"></span></div><span class="meta"></span></li>
+  <li data-srv="hp-pve-a"><div class="top"><span class="n">hp-pve-a</span><span class="st">checking</span></div><span class="d">Proxmox node</span><div class="metric" data-m="cpu"><span class="k">cpu</span><span class="bar"><i></i></span><span class="v"></span></div><div class="metric" data-m="mem"><span class="k">ram</span><span class="bar"><i></i></span><span class="v"></span></div><span class="meta"></span></li>
+</ul>
+
 <h2 class="label">Game servers</h2>
-<!-- data-srv must match a key in SERVERS in api.js -->
-<ul class="list servers" id="servers">
-  <li data-srv="cs2"><span>cs2</span><span class="d">Surf Kitsune.</span><span class="st">checking</span></li>
-  <li data-srv="ark"><span>ark</span><span class="d">Modded ASA PVE on Ragnarok.</span><span class="st">checking</span></li>
-  <li data-srv="minecraft"><span>minecraft</span><span class="d">Ask for the address.</span><span class="st">checking</span></li>
+<ul class="tiles">
+  <li data-srv="ark"><div class="top"><span class="n">ark</span><span class="st">checking</span></div><span class="d">Modded ASA PVE on Ragnarok</span><div class="metric" data-m="cpu"><span class="k">cpu</span><span class="bar"><i></i></span><span class="v"></span></div><div class="metric" data-m="mem"><span class="k">ram</span><span class="bar"><i></i></span><span class="v"></span></div><span class="meta"></span></li>
+  <li data-srv="cs2"><div class="top"><span class="n">cs2</span><span class="st">checking</span></div><span class="d">Surf Kitsune</span><div class="metric" data-m="cpu"><span class="k">cpu</span><span class="bar"><i></i></span><span class="v"></span></div><div class="metric" data-m="mem"><span class="k">ram</span><span class="bar"><i></i></span><span class="v"></span></div><span class="meta"></span></li>
+  <li data-srv="terraria"><div class="top"><span class="n">terraria</span><span class="st">checking</span></div><span class="d">Calamity</span><div class="metric" data-m="cpu"><span class="k">cpu</span><span class="bar"><i></i></span><span class="v"></span></div><div class="metric" data-m="mem"><span class="k">ram</span><span class="bar"><i></i></span><span class="v"></span></div><span class="meta"></span></li>
 </ul>
 <div class="checked" id="checked"></div>
+<h3 class="label">Powered by Zabbix</h3>
 
 <footer>
-  <a href="#">github</a>
-  <a href="mailto:ajake@centresystems.info">email</a>
-  <a href="#">resume</a>
+  <a href="https://github.com/aj4ke">github</a>
+  <a href="mailto:andrewjacobson12@outlook.com">email</a>
+  <a href="resume.html">resume</a>
 </footer>
 
 </div>
 <script src="assets/site.js"></script>
 <script>
 (function () {
-  var rows = document.querySelectorAll('#servers li[data-srv]');
+  var rows = document.querySelectorAll('.tiles li[data-srv]');
   var checked = document.getElementById('checked');
 
+  function since(sec) {
+    var d = Math.floor(sec / 86400), h = Math.floor(sec % 86400 / 3600), m = Math.floor(sec % 3600 / 60);
+    return d ? d + 'd ' + h + 'h' : h ? h + 'h ' + m + 'm' : m + 'm';
+  }
+
   function paint(li, s) {
+    li.querySelectorAll('.metric').forEach(function (m) {
+      var v = s && s[m.dataset.m] != null ? Math.round(s[m.dataset.m]) : null;
+      m.querySelector('.bar i').style.width = (v || 0) + '%';
+      m.querySelector('.v').textContent = v != null ? v + '%' : '-';
+    });
+    li.querySelector('.meta').textContent = s && s.uptime != null ? 'up ' + since(s.uptime) : '';
+
     var st = li.querySelector('.st');
     var state = (s && s.status) || 'unknown';
     st.className = 'st ' + state;
@@ -83,6 +109,81 @@
 
   poll();
   setInterval(poll, 30000);
+})();
+
+(function () {
+  var canvas = document.getElementById('flowgraph');
+  var state = document.getElementById('flowstate');
+  var list = document.getElementById('flows');
+  var WINDOW = 120; // seconds shown on the graph
+  var data = null;
+
+  function rate(bps) {
+    var u = ['bit/s', 'kbit/s', 'Mbit/s', 'Gbit/s'], i = 0;
+    while (bps >= 1000 && i < u.length - 1) { bps /= 1000; i++; }
+    return (i ? bps.toFixed(1) : Math.round(bps)) + ' ' + u[i];
+  }
+
+  // bit/s over the last WINDOW seconds, scaled to the peak
+  function draw() {
+    var dpr = window.devicePixelRatio || 1;
+    var w = canvas.clientWidth, h = canvas.clientHeight;
+    canvas.width = w * dpr;
+    canvas.height = h * dpr;
+    var ctx = canvas.getContext('2d');
+    ctx.scale(dpr, dpr);
+    var css = getComputedStyle(document.documentElement);
+    ctx.fillStyle = css.getPropertyValue('--rule').trim();
+    ctx.fillRect(0, h - 1, w, 1);
+
+    var pts = data ? data.history : [];
+    if (pts.length < 2) return;
+    var max = 1;
+    pts.forEach(function (p) { if (p[2] > max) max = p[2]; });
+    var x = function (p) { return w - (data.now - p[0]) / WINDOW * w; };
+    var y = function (p) { return h - 1 - p[2] / max * (h - 18); };
+
+    ctx.beginPath();
+    pts.forEach(function (p, i) { if (i) ctx.lineTo(x(p), y(p)); else ctx.moveTo(x(p), y(p)); });
+    ctx.strokeStyle = css.getPropertyValue('--link').trim();
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+    ctx.lineTo(x(pts[pts.length - 1]), h);
+    ctx.lineTo(x(pts[0]), h);
+    ctx.globalAlpha = 0.12;
+    ctx.fillStyle = ctx.strokeStyle;
+    ctx.fill();
+    ctx.globalAlpha = 1;
+
+    ctx.fillStyle = css.getPropertyValue('--muted').trim();
+    ctx.font = '12px system-ui, sans-serif';
+    ctx.fillText('peak ' + rate(max), 0, 12);
+  }
+
+  function paint(d) {
+    data = d;
+    var s = d && d.last;
+    state.className = 'st ' + (s ? 'up' : 'down');
+    state.textContent = s ? rate(s.bps) + ', ' + s.pps.toLocaleString() + ' pkt/s' : d ? 'offline' : 'unavailable';
+    list.replaceChildren.apply(list, ((s && s.flows) || []).slice(0, 5).map(function (f) {
+      var li = el('li');
+      li.append(el('span', null, f.proto), el('span', { class: 'd' }, f.src + ' → ' + f.dst), el('span', { class: 'rate' }, rate(f.bps)));
+      return li;
+    }));
+    draw();
+  }
+
+  function poll() {
+    fetch('/api/flows', { cache: 'no-store' })
+      .then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); })
+      .then(paint)
+      .catch(function () { paint(null); });
+  }
+
+  poll();
+  setInterval(poll, 1000);
+  window.addEventListener('resize', draw);
+  document.getElementById('theme').addEventListener('click', draw);
 })();
 </script>
 </body>

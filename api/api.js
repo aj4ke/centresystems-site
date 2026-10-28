@@ -1,22 +1,27 @@
-// api.js - backend for centresystems.info.
-//
 // Caddy proxies /api/* here:
 //   GET /api/status          game server status from Zabbix
 //   GET /api/repos           your public GitHub repos
-//   GET /api/readme/<repo>   one repo's info plus its README (markdown)
+//   GET /api/readme/<repo>   one repo's info, its README (markdown), and its file list
+//   GET /api/flows           latest packet/flow snapshot plus recent history
 
 const http = require('http');
 
 const env = process.env;
 const PORT = Number(env.PORT || 3001);
+const INGEST_PORT = Number(env.INGEST_PORT || 3002);
 
 // site id (data-srv in index.html) -> Zabbix host name
 const SERVERS = {
-  cs2: 'cs2',
+  'centresrv-pve': 'centresrv-pve',
+  'thinkpad-pve': 'thinkpad-proxmox',
+  'hp-pve-a': 'pve-a',
   ark: 'ark',
-  minecraft: 'minecraft',
+  cs2: 'cs2',
+  terraria: 'terraria',
 };
-const ZBX_KEYS = ['game.status', 'game.players', 'game.players.max'];
+// game.* are custom items on the game servers, the rest come from the
+// standard Linux by Zabbix agent template
+const ZBX_KEYS = ['game.status', 'game.players', 'game.players.max', 'system.cpu.util', 'vm.memory.util', 'system.uptime'];
 const STALE_S = 300; // Zabbix data older than this shows as unknown
 
 const TTL = { status: 15, repos: 600, readme: 600 }; // seconds
@@ -60,9 +65,20 @@ async function zbx(method, params) {
 async function gameStatus() {
   const now = Math.floor(Date.now() / 1000);
 
-  const hosts = await zbx('host.get', { output: ['hostid', 'host'], filter: { host: Object.values(SERVERS) } });
+  const hosts = await zbx('host.get', {
+    output: ['hostid', 'host', 'active_available'],
+    selectInterfaces: ['available'],
+    filter: { host: Object.values(SERVERS) },
+  });
   const nameById = {};
-  for (const h of hosts) nameById[h.hostid] = h.host;
+  const hostState = {};
+  for (const h of hosts) {
+    nameById[h.hostid] = h.host;
+    // Zabbix availability: 1 available, 2 unavailable, 0 unknown. Passive
+    // checks report it per interface, active checks in active_available.
+    const a = [h.active_available, ...h.interfaces.map((i) => i.available)].map(Number);
+    hostState[h.host] = a.includes(1) ? 'up' : a.includes(2) ? 'down' : 'unknown';
+  }
 
   const items = hosts.length ? await zbx('item.get', {
     output: ['hostid', 'key_', 'lastvalue', 'lastclock'],
@@ -82,12 +98,16 @@ async function gameStatus() {
   const servers = {};
   for (const [id, host] of Object.entries(SERVERS)) {
     const k = byHost[host] || {};
+    // a game server's status is the game itself when Zabbix has it
     const st = k['game.status'];
-    const status = !fresh(st) ? 'unknown' : Number(st.value) === 1 ? 'up' : 'down';
+    const status = fresh(st) ? (Number(st.value) === 1 ? 'up' : 'down') : hostState[host] || 'unknown';
     servers[id] = {
       status,
       players: status === 'up' ? num(k['game.players']) : null,
       max: num(k['game.players.max']),
+      cpu: num(k['system.cpu.util']),
+      mem: num(k['vm.memory.util']),
+      uptime: num(k['system.uptime']),
     };
   }
   return { updated: now, servers };
@@ -137,12 +157,45 @@ async function readme(name) {
   } catch (e) {
     if (e.status !== 404) throw e;
   }
-  return { user: env.GITHUB_USER, repo, markdown };
+  // whole repo tree in one call; an empty repo has none
+  const tree = await gh(`/repos/${encodeURIComponent(env.GITHUB_USER)}/${encodeURIComponent(name)}/git/trees/HEAD?recursive=1`)
+    .catch(() => ({ tree: [] }));
+  const files = tree.tree.map((f) => ({ path: f.path, dir: f.type === 'tree' }));
+  return { user: env.GITHUB_USER, repo, markdown, files };
+}
+
+// ---- packet/flow ingest
+
+const FLOW_HISTORY = 120; // snapshots kept for the graph
+const FLOW_STALE_S = 5;   // no POST for this long shows as offline
+
+const flows = { last: null, history: [] };
+
+function ingest(req, res) {
+  if (req.method !== 'POST' || req.url !== '/ingest') return send(res, 404, { error: 'not found' });
+  let body = '';
+  req.on('data', (c) => { body += c; });
+  req.on('end', () => {
+    let s;
+    try { s = JSON.parse(body); } catch { return send(res, 400, { error: 'bad json' }); }
+    s.t = Math.floor(Date.now() / 1000);
+    flows.last = s;
+    flows.history.push([s.t, s.pps, s.bps]);
+    if (flows.history.length > FLOW_HISTORY) flows.history.shift();
+    res.writeHead(204).end();
+  });
+}
+
+function flowStatus() {
+  const now = Math.floor(Date.now() / 1000);
+  const live = flows.last && now - flows.last.t <= FLOW_STALE_S;
+  return { now, last: live ? flows.last : null, history: flows.history };
 }
 
 // ---- server
 
 const routes = [
+  [/^\/api\/flows$/, () => flowStatus()],
   [/^\/api\/status$/, () => cached('status', TTL.status, gameStatus)],
   [/^\/api\/repos$/, async () => ({ user: env.GITHUB_USER, repos: await cached('repos', TTL.repos, repos) })],
   [/^\/api\/readme\/([A-Za-z0-9._-]{1,100})$/, (m) => cached('readme:' + m[1], TTL.readme, () => readme(m[1]))],
@@ -164,3 +217,5 @@ http.createServer(async (req, res) => {
     send(res, e.status === 404 ? 404 : 502, { error: e.status === 404 ? 'not found' : 'upstream unavailable' });
   }
 }).listen(PORT, '127.0.0.1', () => console.log('centre api on 127.0.0.1:' + PORT));
+
+http.createServer(ingest).listen(INGEST_PORT, () => console.log('flow ingest on :' + INGEST_PORT));
