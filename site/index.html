@@ -117,6 +117,8 @@
   var list = document.getElementById('flows');
   var WINDOW = 120; // seconds shown on the graph
   var data = null;
+  canvas.style.width = '100%';
+  canvas.style.height = '150px';
 
   function rate(bps) {
     var u = ['bit/s', 'kbit/s', 'Mbit/s', 'Gbit/s'], i = 0;
@@ -124,7 +126,6 @@
     return (i ? bps.toFixed(1) : Math.round(bps)) + ' ' + u[i];
   }
 
-  // bit/s over the last WINDOW seconds, scaled to the peak
   function draw() {
     var dpr = window.devicePixelRatio || 1;
     var w = canvas.clientWidth, h = canvas.clientHeight;

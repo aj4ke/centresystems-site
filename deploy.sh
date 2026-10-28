@@ -1,9 +1,4 @@
 #!/usr/bin/env bash
-# deploy.sh - run by the deploy job on the LXC's self-hosted runner.
-#
-# Copies the site and API into place as the runner user, then calls the
-# root helper (centre-apply) through sudo to reload Caddy and restart the API.
-# The repo is the source of truth: files removed from site/ are removed live.
 
 set -euo pipefail
 cd "$(dirname "$0")"
