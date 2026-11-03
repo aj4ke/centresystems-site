@@ -134,18 +134,34 @@ async function repos() {
   const user = encodeURIComponent(env.GITHUB_USER);
   const list = await gh(`/users/${user}/repos?type=owner&sort=pushed&per_page=100`);
   const topic = env.GITHUB_TOPIC;
-  return list
-    .filter((r) => !r.fork && !r.private && (!topic || (r.topics || []).includes(topic)))
-    .map((r) => ({
-      name: r.name,
-      description: r.description,
-      language: r.language,
-      stars: r.stargazers_count,
-      pushed: r.pushed_at,
-      url: r.html_url,
-      homepage: r.homepage || null,
-      topics: r.topics || [],
-    }));
+  const shown = list.filter((r) => !r.fork && !r.private && (!topic || (r.topics || []).includes(topic)));
+  return Promise.all(shown.map(async (r) => ({
+    name: r.name,
+    description: r.description,
+    languages: await languages(r.name),
+    stars: r.stargazers_count,
+    pushed: r.pushed_at,
+    url: r.html_url,
+    homepage: r.homepage || null,
+    topics: r.topics || [],
+  })));
+}
+
+// byte counts -> [{ name, pct }], largest first, like the GitHub sidebar.
+// Anything under 0.1% is folded into "Other".
+async function languages(name) {
+  const bytes = await gh(`/repos/${encodeURIComponent(env.GITHUB_USER)}/${encodeURIComponent(name)}/languages`)
+    .catch(() => ({}));
+  const total = Object.values(bytes).reduce((a, b) => a + b, 0);
+  const out = [];
+  let other = 0;
+  for (const [lang, n] of Object.entries(bytes).sort((a, b) => b[1] - a[1])) {
+    const pct = Math.round((n / total) * 1000) / 10;
+    if (pct < 0.1) other += n;
+    else out.push({ name: lang, pct });
+  }
+  if (other) out.push({ name: 'Other', pct: Math.round((other / total) * 1000) / 10 || 0.1 });
+  return out;
 }
 
 async function readme(name) {

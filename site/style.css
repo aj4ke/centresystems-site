@@ -49,6 +49,13 @@ h3.label { font-size: 9px; font-weight: 600; text-transform: uppercase; letter-s
 .repos { display: grid; grid-template-columns: max-content 1fr; }
 .repos li { grid-column: 1 / -1; grid-template-columns: subgrid; column-gap: 24px; }
 .more { display: inline-block; margin-top: 10px; font-size: 15px; }
+/* repo language breakdown */
+.langs { display: block; margin: 6px 0 2px; font-size: 13px; color: var(--muted); }
+.langbar { display: flex; height: 8px; border-radius: 4px; overflow: hidden; background: var(--rule); gap: 2px; }
+.langbar i { display: block; min-width: 2px; }
+.langkey { display: flex; flex-wrap: wrap; column-gap: 14px; margin-top: 4px; }
+.langkey i { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 5px; vertical-align: 0; }
+.langkey b { font-weight: 400; color: var(--fg); }
 .msg { color: var(--muted); }
 
 /* server tiles */
