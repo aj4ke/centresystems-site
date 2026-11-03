@@ -34,9 +34,32 @@
 
   function fail(text) { main.replaceChildren(el('p', { class: 'msg' }, text)); }
 
+  // GitHub linguist colors for the languages likely to show up; the rest fall back to muted
+  var LANG_COLORS = {
+    Python: '#3572A5', Go: '#00ADD8', C: '#555555', 'C++': '#f34b7d', JavaScript: '#f1e05a',
+    HTML: '#e34c26', CSS: '#663399', Shell: '#89e051', Makefile: '#427819',
+    CMake: '#DA3434', Dockerfile: '#384d54', Swift: '#F05138', Rust: '#dea584', BitBake: '#00bce4',
+    Jinja: '#a52a22', Assembly: '#6E4C13', Java: '#b07219',
+  };
+
+  function langs(r) {
+    var wrap = el('span', { class: 'langs' });
+    if (!r.languages || !r.languages.length) return wrap;
+    var bar = el('span', { class: 'langbar' });
+    var key = el('span', { class: 'langkey' });
+    r.languages.forEach(function (l) {
+      var c = LANG_COLORS[l.name] || 'var(--muted)';
+      bar.appendChild(el('i', { style: 'width:' + l.pct + '%;background:' + c, title: l.name + ' ' + l.pct + '%' }));
+      var k = el('span');
+      k.append(el('i', { style: 'background:' + c }), l.name + ' ', el('b', null, l.pct + '%'));
+      key.appendChild(k);
+    });
+    wrap.append(bar, key);
+    return wrap;
+  }
+
   function meta(r) {
     var bits = [];
-    if (r.language) bits.push(r.language);
     bits.push('updated ' + shortDate(r.pushed));
     if (r.stars) bits.push(r.stars + (r.stars === 1 ? ' star' : ' stars'));
     return bits.join(' · ');
@@ -54,6 +77,7 @@
           var li = el('li');
           li.appendChild(el('a', { href: 'projects.html?r=' + encodeURIComponent(r.name) }, r.name));
           var d = el('span', { class: 'd' }, r.description || '');
+          d.appendChild(langs(r));
           d.appendChild(el('span', { class: 'meta' }, meta(r)));
           li.appendChild(d);
           ul.appendChild(li);
@@ -105,6 +129,7 @@
         var pm = el('p', { class: 'pagemeta' });
         pm.appendChild(el('a', { href: r.url }, 'view on github'));
         pm.appendChild(document.createTextNode(' · ' + meta(r)));
+        pm.appendChild(langs(r));
         frag.appendChild(pm);
 
         // breadcrumb header: repo / dir / file
