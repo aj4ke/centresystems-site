@@ -1,7 +1,4 @@
-# centresystems.info
-
-Personal site, self-hosted on a Proxmox VM behind a Cloudflare Tunnel.
-
+[centresystems.info](https://centresystems.info)
 ## Features
 - Live status of my Proxmox nodes and game servers from Zabbix
 - Live packet view fed by flowView, an XDP/eBPF flow classifier on my LAN

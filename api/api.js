@@ -1,7 +1,7 @@
 // Caddy proxies /api/* here:
 //   GET /api/status          game server status from Zabbix
-//   GET /api/repos           your public GitHub repos
-//   GET /api/readme/<repo>   one repo's info, its README (markdown), and its file list
+//   GET /api/repos           public github repos
+//   GET /api/readme/<repo>   one repo's info, its README, and its file list
 //   GET /api/flows           latest packet/flow snapshot plus recent history
 
 const http = require('http');
@@ -15,6 +15,7 @@ const SERVERS = {
   'centresrv-pve': 'centresrv-pve',
   'thinkpad-pve': 'thinkpad-proxmox',
   'hp-pve-a': 'pve-a',
+  minecraft: 'minecraft',
   ark: 'ark',
   cs2: 'cs2',
   terraria: 'terraria',

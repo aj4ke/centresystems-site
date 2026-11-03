@@ -9,12 +9,6 @@
 		reverse_proxy 127.0.0.1:3001
 	}
 
-	# notes folder: browse lets notes.html get the file list as JSON
-	handle /notes/* {
-		root * /var/www/centre
-		file_server browse
-	}
-
 	handle {
 		root * /var/www/centre
 		file_server
