@@ -49,9 +49,6 @@ h3.label { font-size: 9px; font-weight: 600; text-transform: uppercase; letter-s
 .repos { display: grid; grid-template-columns: max-content 1fr; }
 .repos li { grid-column: 1 / -1; grid-template-columns: subgrid; column-gap: 24px; }
 .more { display: inline-block; margin-top: 10px; font-size: 15px; }
-
-/* in-progress tag after a project name */
-.wip > a::after { content: "wip"; margin-left: 8px; padding: 0 5px; font-size: 11px; color: var(--muted); border: 1px solid var(--rule); border-radius: 3px; vertical-align: 2px; }
 .msg { color: var(--muted); }
 
 /* server tiles */
@@ -85,7 +82,7 @@ a:visited { color: var(--link); text-decoration: none; }
 a:hover { color: var(--link); text-decoration: none; }
 a:active { color: var(--link); text-decoration: none; }
 
-/* rendered markdown (notes, READMEs) */
+/* rendered markdown (READMEs) */
 .back { font-size: 15px; display: inline-block; margin-bottom: 16px; }
 .pagemeta { font-size: 14px; color: var(--muted); margin: -4px 0 24px; }
 .md { overflow-wrap: anywhere; }
